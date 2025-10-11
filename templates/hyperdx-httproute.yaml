@@ -1,0 +1,39 @@
+{{- /*
+Render multiple HTTPRoutes from .Values.httpRoutes
+Each item must have: enabled=true, service.name, parentRef.name
+*/ -}}
+{{- $list := .Values.httpRoutes | default list -}}
+{{- range $i, $r := $list }}
+{{- if and $r.enabled $r.service.name $r.parentRef.name }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name (default (printf "hyperdx-%d" $i) $r.name) | trunc 63 | trimSuffix "-" }}
+  labels:
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/part-of: hyperdx
+spec:
+  {{- if $r.hostnames }}
+  hostnames:
+    {{- toYaml $r.hostnames | nindent 4 }}
+  {{- end }}
+  parentRefs:
+    - name: {{ $r.parentRef.name }}
+      {{- if $r.parentRef.namespace }}
+      namespace: {{ $r.parentRef.namespace }}
+      {{- end }}
+      {{- if $r.parentRef.sectionName }}
+      sectionName: {{ $r.parentRef.sectionName }}
+      {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ $r.pathPrefix | default "/" | quote }}
+      backendRefs:
+        - name: {{ $r.service.name }}
+          port: {{ $r.service.port | default 80 }}
+---
+{{- end }}
+{{- end }}

@@ -1,0 +1,13 @@
+apiVersion: v2
+name: clickstack
+description: Umbrella chart to deploy HyperDX ClickStack from upstream helm repo.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+dependencies:
+  - name: clickstack
+    alias: clickstack
+    version: ">=0.0.0-0"
+    repository: "https://hyperdxio.github.io/helm-charts"
+
