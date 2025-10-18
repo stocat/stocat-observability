@@ -6,8 +6,6 @@ version: 0.1.0
 appVersion: "0.1.0"
 
 dependencies:
-  - name: clickstack
-    alias: clickstack
-    version: ">=0.0.0-0"
-    repository: "https://hyperdxio.github.io/helm-charts"
-
+  - name: hdx-oss-v2
+    repository: https://hyperdxio.github.io/helm-charts
+    version: ">=0.5.0"

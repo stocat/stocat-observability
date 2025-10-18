@@ -9,7 +9,7 @@ VALUES      ?= values.yaml
 API_KEY     ?=
 
 # Optional kube context (e.g., kind-clickstack)
-KUBE_CONTEXT ?= kind-local
+KUBE_CONTEXT ?= kind-kind-local
 KCTX    := $(if $(KUBE_CONTEXT),--kube-context $(KUBE_CONTEXT),)
 KCTXCTL := $(if $(KUBE_CONTEXT),--context $(KUBE_CONTEXT),)
 
@@ -28,22 +28,13 @@ deps:
 	$(HELM) dependency update .
 
 # ---- Namespace & Secret ----
-.PHONY: ns secret
+.PHONY: ns
 ns:
 	$(KUBECTL) $(KCTXCTL) get ns $(NAMESPACE) >/dev/null 2>&1 || $(KUBECTL) $(KCTXCTL) create ns $(NAMESPACE)
+	$(KUBECTL) $(KCTXCTL) label ns $(NAMESPACE) istio-injection=disabled --overwrite # istio 임시 비활성화 (opamp 이슈)
 
-secret: ns
-	@if [ -z "$(API_KEY)" ]; then \
-		echo "[ERROR] Set API_KEY=... when calling make secret"; \
-		exit 1; \
-	fi
-	$(KUBECTL) $(KCTXCTL) -n $(NAMESPACE) create secret generic hyperdx-secret \
-	  --from-literal=API_KEY=$(API_KEY) \
-	  --dry-run=client -o yaml | $(KUBECTL) $(KCTXCTL) apply -f -
-
-# ---- Install/Upgrade/Uninstall ----
-.PHONY: install upgrade uninstall template status
-install: repo deps ns
+.PHONY: all clean install upgrade uninstall template status
+install:
 	$(HELM) upgrade -i $(RELEASE) . -n $(NAMESPACE) -f $(VALUES) $(KCTX)
 
 upgrade: deps
@@ -60,7 +51,11 @@ status:
 
 # ---- Convenience ----
 .PHONY: all
-all: repo deps secret install
+all: repo deps ns install
+
+.PHONY: clean
+clean: uninstall
+
 
 # ---- kind helpers ----
 .PHONY: kind-create kind-delete kind-context

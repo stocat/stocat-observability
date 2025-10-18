@@ -1,0 +1,6 @@
+dependencies:
+- name: hdx-oss-v2
+  repository: https://hyperdxio.github.io/helm-charts
+  version: 0.8.0
+digest: sha256:1f3823c6025bc9ce184dd0f18637d3d5e6a6d42584acdc5d975777aaf5bc44bb
+generated: "2025-10-18T23:50:33.396149+09:00"

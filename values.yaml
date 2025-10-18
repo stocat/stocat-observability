@@ -1,59 +1,57 @@
-clickstack:
+# HTTPRoutes 설정 (여러 개 생성 가능)
+# 각 항목은 Gateway API HTTPRoute 하나를 의미합니다.
+# 기본은 비활성화 예시이며, 실제 서비스/게이트웨이에 맞게 채워 넣으세요.
+
+# 네임스페이스에는 반드시 사이드카 주입 라벨:
+# kubectl label ns clickstack istio-injection=enabled
+
+# HyperDX 단일 차트 하나에 다 실어 올린다
+hdx-oss-v2:
+  global:
+    storageClassName: standard
+  # ── Istio 환경 기본 권장 옵션
+#  podAnnotations:
+#    sidecar.istio.io/rewriteAppHTTPProbers: "true"
+
+  mongodb:
+    persistence:
+      enabled: true
+
+  # ── UI Service: 너는 HTTPRoute로 붙일 예정이니 Ingress는 끈다
+#  service:
+#    type: ClusterIP
+#    port: 3000
+  ingress:
+    enabled: false
+
+  # ── API 키: 아래 Secret 템플릿이 기대하는 이름/키와 일치
+  apiKey:
+    valueFrom:
+      secretKeyRef:
+        name: hyperdx-secret
+        key: API_KEY
+
+  # ── 내장 ClickHouse 켠다(간단 단일 노드)
   clickhouse:
     enabled: true
     persistence:
       enabled: true
-      size: 10Gi
-    resources:
-      requests:
-        cpu: "250m"
-        memory: "512Mi"
-      limits:
-        cpu: "1"
-        memory: "2Gi"
-
+      size: 20Gi
+  # ── 내장 OTel Collector 켠다(OTLP/gRPC 4317, OTLP/HTTP 4318)
   otel:
     enabled: true
+
+hyperdx:
+  apiKeyB64: WU9VUl9IWVBFUkRYX0FQSV9LRVk=
+
+httpRoutes:
+  - name: hyperdx-ui
+    enabled: true
+    hostnames:
+      - hyperdx.local
+    parentRef:
+      name: istio-ingressgateway
+      namespace: istio-system
     service:
-      type: ClusterIP
-      ports:
-        otlp-http: 4318   # /v1/{traces,metrics,logs}
-    # (선택) JSON 타입 실험 기능 — 최신 ClickStack 베타 기능
-    env:
-      - name: OTEL_AGENT_FEATURE_GATE_ARG
-        value: "--feature-gates=clickhouse.json"   # 필요 시만 켜기
-
-  hyperdx:
-    # 차트 기본 Ingress는 비활성화 (HTTPRoute 사용)
-    ingress:
-      enabled: false
-      host: "hyperdx.local" # 미사용. HTTPRoute 사용 시 hostnames로 설정
-    # API Key는 시크릿에서 주입
-    apiKey:
-      valueFrom:
-        secretKeyRef:
-          name: hyperdx-secret
-          key: API_KEY
-    # (선택) JSON 스키마 베타
-    env:
-      - name: BETA_CH_OTEL_JSON_SCHEMA_ENABLED
-        value: "true"
-
-# HTTPRoutes 설정 (여러 개 생성 가능)
-# 각 항목은 Gateway API HTTPRoute 하나를 의미합니다.
-# 기본은 비활성화 예시이며, 실제 서비스/게이트웨이에 맞게 채워 넣으세요.
-httpRoutes: []
-# 예시:
-# httpRoutes:
-#   - name: hyperdx-ui
-#     enabled: true
-#     hostnames:
-#       - hyperdx.local
-#     parentRef:
-#       name: my-gateway
-#       namespace: default     # 선택
-#       sectionName: http      # 선택 (게이트웨이 리스너 이름)
-#     service:
-#       name: <hyperdx-ui-svc-name>
-#       port: 80
-#     pathPrefix: /            # 기본값 "/"
+      name: clickstack-hdx-oss-v2-app
+      port: 3000
