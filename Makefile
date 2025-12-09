@@ -9,7 +9,7 @@ VALUES      ?= values.yaml
 API_KEY     ?=
 
 # Optional kube context (e.g., kind-clickstack)
-KUBE_CONTEXT ?= kind-kind-local
+KUBE_CONTEXT ?= kind-stocat-local
 KCTX    := $(if $(KUBE_CONTEXT),--kube-context $(KUBE_CONTEXT),)
 KCTXCTL := $(if $(KUBE_CONTEXT),--context $(KUBE_CONTEXT),)
 
